@@ -1,0 +1,4 @@
+*
+!build/dbt/docker/requirements/*.txt
+!artifacts/dist
+!artifacts/wheel_requirements.txt

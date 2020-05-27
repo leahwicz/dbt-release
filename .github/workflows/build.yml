@@ -6,35 +6,115 @@ name: build dbt
 on: push
 
 jobs:
-  build-wheels:
-    name: Build the wheels based on the releases file
+  create-commit:
+    # after this step:
+    #  - there should be 1 new commit in dbt.
+    #  - in that commit there should be a requirements file at docker/requirements/requirements.{version}.txt
+    #  - in that commit there should be a version bump
+    #  - in that commit there should be a changelog update
+    #  - there should be an artifact named release.txt, which is the file that triggered this + the new commit as the commit field
+    name: Create a new commit with an updated version and store the release file
     runs-on: ubuntu-18.04
-    container: fishtownanalytics/test-container:7
+    outputs:
+      DBT_RELEASE_VERSION: ${{ steps.createrelease.outputs.DBT_RELEASE_VERSION }}
+      DBT_RELEASE_COMMIT: ${{ steps.createrelease.outputs.DBT_RELEASE_COMMIT }}
+      DBT_RELEASE_BRANCH: ${{ steps.createrelease.outputs.DBT_RELEASE_BRANCH }}
     steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
-          repository: fishtown-analytics/dbt
-          path: build/dbt
-      - name: Look for new build requests and build wheels
-        run: python3.8 ./scripts/build-from-releases.py package
-      - name: List my data
-        run: ls dist/
-      - name: Upload packages
-        uses: actions/upload-artifact@v2
+          fetch-depth: 2
+      - uses: webfactory/ssh-agent@v0.3.0
         with:
-          name: packages
-          path: ./artifacts/dist
-      - name: Upload releasefile
+          ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
+      - name: Look for new build requests and build wheels
+        id: createrelease
+        run: /bin/bash scripts/script_shim.bash native create
+      - name: Store releasefile artifact
         uses: actions/upload-artifact@v2
         with:
           name: releasefile
           path: ./artifacts/release.txt
+  build-wheels:
+    # after this step there should be:
+    #   - a "dist" artifact with wheels/sdists.
+    #   - a "wheel_requirements" text file with the wheel paths
+    name: Build the wheels based on the releases file
+    runs-on: ubuntu-18.04
+    needs: create-commit
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          # see https://github.com/actions/checkout/issues/265 - can't use the short sha
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Look for new build requests and build wheels
+        run: /bin/bash scripts/script_shim.bash native package
+      - name: Store package artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: ./artifacts/dist
+      - name: Store wheel requirements file
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheel_requirements
+          path: ./artifacts/wheel_requirements.txt
   # The unit tests won't be informative, but the integration tests should be
+  test-bigquery:
+    name: Run bigquery tests
+    needs: [create-commit, build-wheels]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: artifacts/dist
+      - name: Run tests
+        run: /bin/bash scripts/script_shim.bash native test bigquery
+        env:
+          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+          BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
   test-postgres:
     name: Run postgres tests
-    needs: build-wheels
+    needs: [create-commit, build-wheels]
     runs-on: ubuntu-18.04
-    container: fishtownanalytics/test-container:7
     services:
       database:
         image: postgres
@@ -42,6 +122,9 @@ jobs:
           POSTGRES_USER: "root"
           POSTGRES_PASSWORD: "password"
           POSTGRES_DB: "dbt"
+        ports:
+          # If we run our test in a container, we don't need this
+          - 5432:5432
         # straight out of the github actions UI.
         options: >-
           --health-cmd pg_isready
@@ -49,31 +132,334 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      # TODO: mkdir required?
-      - name: Check out dbt
-        uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
-          repository: fishtown-analytics/dbt
-          path: build/dbt
-      # TODO: mkdir required?
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
       - name: Download releasefile
         uses: actions/download-artifact@v2
         with:
           name: releasefile
-          path: artifacts/release.txt
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Hosts file update
+        run: sudo echo "127.0.0.1  database" | sudo tee -a /etc/hosts
+      - name: Setup postgres
+        run: bash ./build/dbt/test/setup_db.sh
+        env:
+          PGHOST: database
+          PGUSER: root
+          PGPASSWORD: password
+          PGDATABASE: postgres
       - name: Download packages
         uses: actions/download-artifact@v2
         with:
           name: packages
           path: artifacts/dist
-      - name: Setup postgres
-        run: bash ./test/setup_db.sh
-        environment:
-          PGHOST: database
-          PGUSER: root
-          PGPASSWORD: password
-          PGDATABASE: postgres
       - name: Run tests
-        run: python3.8 ./scripts/build-from-releases.py test postgres
-      - name: Run RPC tests
-        run: python3.8 ./scripts/build-from-releases.py test rpc
+        run: /bin/bash scripts/script_shim.bash native test postgres
+  test-redshift:
+    name: Run redshift tests
+    needs: [create-commit, build-wheels]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: artifacts/dist
+      - name: Run tests
+        run: /bin/bash scripts/script_shim.bash native test redshift
+        env:
+          REDSHIFT_TEST_DBNAME: public_integration_tests
+          REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
+          REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
+          REDSHIFT_TEST_PORT: 5439
+          REDSHIFT_TEST_USER: public_integration_test_user
+  test-snowflake:
+    name: Run snowflake tests
+    needs: [create-commit, build-wheels]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: artifacts/dist
+      - name: Run tests
+        run: /bin/bash scripts/script_shim.bash native test snowflake
+        env:
+          SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
+          SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
+          SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TEST_ALT
+          SNOWFLAKE_TEST_DATABASE: DBT_TEST
+          SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
+          SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
+          SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
+          SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
+          SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
+          SNOWFLAKE_TEST_USER: public_integration_test_user
+          SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
+  test-homebrew-formula:
+    name: Test the homebrew formula with local wheels
+    needs: [create-commit, build-wheels]
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: artifacts/dist
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - uses: webfactory/ssh-agent@v0.3.0
+        with:
+          ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
+      - name: Test homebrew packaging
+        env:
+          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+          BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
+          REDSHIFT_TEST_DBNAME: public_integration_tests
+          REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
+          REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
+          REDSHIFT_TEST_PORT: 5439
+          REDSHIFT_TEST_USER: public_integration_test_user
+          SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
+          SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
+          SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TEST_ALT
+          SNOWFLAKE_TEST_DATABASE: DBT_TEST
+          SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
+          SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
+          SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
+          SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
+          SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
+          SNOWFLAKE_TEST_USER: public_integration_test_user
+          SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
+        run: /bin/bash scripts/script_shim.bash homebrew test
+      - name: Store homebrew template artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: homebrew-template
+          path: ./artifacts/homebrew_template.pickle
+  all-tests:
+    name: All tests requirement
+    needs: [test-bigquery, test-postgres, test-redshift, test-snowflake, test-homebrew-formula]
+    runs-on: ubuntu-18.04
+    steps:
+      - name: All tests passed
+        run: echo "All tests passed"
+  upload-wheels:
+    name: Upload the wheels to pypi
+    needs: [create-commit, all-tests]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: pip install wheel twine
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: artifacts/dist
+      - name: Upload to pypi
+        env:
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+          TWINE_USERNAME: analyst-collective
+          TWINE_PASSWORD: ${{ secrets.PYPITEST_PASSWORD }}
+        run: twine check artifacts/dist/* && twine upload --non-interactive artifacts/dist/*
+  upload-docker-image:
+    name: Upload a new docker image that makes use of the built wheels
+    needs: [create-commit, build-wheels, all-tests]
+    runs-on: ubuntu-18.04
+    steps:
+      - run: mkdir build && mkdir artifacts
+      - name: Check out dbt-release
+        uses: actions/checkout@v2
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Download wheel_requirements
+        uses: actions/download-artifact@v2
+        with:
+          name: wheel_requirements
+          path: artifacts/
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: packages
+          path: artifacts/dist
+      - name: Echo the build args
+        run: echo BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
+      - name: ls the requirements file directory
+        run: ls -l ./build/dbt/docker/requirements/
+      - name: ls the build requirements txt path
+        run: ls -l ./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt
+      - name: ls the dist path
+        run: ls -l ./artifacts/dist
+      - name: ls the wheel_requirements file
+        run: ls -l ./artifacts/wheel_requirements.txt
+      - name: Upload docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: fishtownanalytics/dbt-ci-test
+          tags: ${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
+          build_args: BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
+  upload-homebrew-formula:
+    name: Make a new formula that makes use of pypi artifacts and upload that
+    needs: [create-commit, upload-wheels, all-tests]
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Download homebrew template
+        uses: actions/download-artifact@v2
+        with:
+          name: homebrew-template
+          path: artifacts/
+      - uses: webfactory/ssh-agent@v0.3.0
+        with:
+          ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
+      - name: Create and push source-only homebrew package
+        env:
+          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+          BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
+          REDSHIFT_TEST_DBNAME: public_integration_tests
+          REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
+          REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
+          REDSHIFT_TEST_PORT: 5439
+          REDSHIFT_TEST_USER: public_integration_test_user
+          SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
+          SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
+          SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TEST_ALT
+          SNOWFLAKE_TEST_DATABASE: DBT_TEST
+          SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
+          SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
+          SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
+          SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
+          SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
+          SNOWFLAKE_TEST_USER: public_integration_test_user
+          SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
+          ### TODO: remove this.
+          # Tell pypi to look on testpypi if it doesn't find a package on pypi, since
+          # we only push to testpypi right now.
+          PIP_EXTRA_INDEX_URL: https://test.pypi.org/simple
+        run: /bin/bash scripts/script_shim.bash homebrew upload
+
+  # # TODO: implement
+  # build-homebrew-bottle:
+  #   name: Make a homebrew bottle using the formula
+  #   needs: [upload-homebrew-formula]
+  #   runs-on: macos-10.15
+  #   steps:
+  #     - uses:
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: '3.8'
+  #     - run: mkdir build && mkdir artifacts
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 2
+  #     - name: Download releasefile
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: releasefile
+  #         path: artifacts/
+  #     - name: Create and push final homebrew package with catalina bottles
+  #       run: /bin/bash scripts/script_shim.bash homebrew bottle
