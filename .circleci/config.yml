@@ -1,121 +1,121 @@
-version: 2.1
+# version: 2.1
 
-executors:
-  fishtown-executor:
-    docker:
-      - image: fishtownanalytics/test-container:5
-        environment:
-          DBT_INVOCATION_ENV: circle
-    working_directory: /usr/app
-  fishtown-pg-executor:
-    docker:
-      - image: fishtownanalytics/test-container:5
-        environment:
-          DBT_INVOCATION_ENV: circle
-      - image: postgres
-        name: database
-        environment: &pgenv
-          POSTGRES_USER: "root"
-          POSTGRES_PASSWORD: "password"
-          POSTGRES_DB: "dbt"
-    working_directory: /usr/app
-
-
-jobs:
-  build:
-    executor: fishtown-executor
-    steps:
-      - add_ssh_keys
-      - checkout
-      - run:
-          name: Look for new build requests and build wheels
-          command: python3.6 ./.circleci/build-from-releases.py package
-      - run:
-          name: where is my data?
-          command: ls /usr/app/build
-      - persist_to_workspace:
-          root: /usr/app/build
-          paths:
-            - dbt
-            - test_venv
-            - pkg_venv
-  test-postgres:
-    executor: fishtown-pg-executor
-    steps:
-      - add_ssh_keys
-      - checkout
-      - attach_workspace:
-          at: /usr/app/build
-      - run: &setupdb
-          name: Setup postgres
-          command: bash /usr/app/build/dbt/test/setup_db.sh
-          environment:
-            PGHOST: database
-            PGUSER: root
-            PGPASSWORD: password
-            PGDATABASE: postgres
-      - run:
-          name: Run tests on the built wheels
-          command: python3.6 ./.circleci/build-from-releases.py test postgres
-  test-redshift:
-    executor: fishtown-executor
-    steps:
-      - add_ssh_keys
-      - checkout
-      - attach_workspace:
-          at: /usr/app/build
-      - run:
-          name: Run tests on the built wheels
-          command: python3.6 ./.circleci/build-from-releases.py test redshift
-  test-bigquery:
-    executor: fishtown-executor
-    steps:
-      - add_ssh_keys
-      - checkout
-      - attach_workspace:
-          at: /usr/app/build
-      - run:
-          name: Run tests on the built wheels
-          command: python3.6 ./.circleci/build-from-releases.py test bigquery
-  test-snowflake:
-    executor: fishtown-executor
-    steps:
-      - add_ssh_keys
-      - checkout
-      - attach_workspace:
-          at: /usr/app/build
-      - run:
-          name: Run tests on the built wheels
-          command: python3.6 ./.circleci/build-from-releases.py test snowflake
-  upload-artifacts:
-    executor: fishtown-executor
-    steps:
-      - add_ssh_keys
-      - checkout
-      - attach_workspace:
-          at: /usr/app/build
-      - run:
-          name: Upload the artifacts and upload to pypi
-          command: python3.6 ./.circleci/build-from-releases.py upload
+# executors:
+#   fishtown-executor:
+#     docker:
+#       - image: fishtownanalytics/test-container:5
+#         environment:
+#           DBT_INVOCATION_ENV: circle
+#     working_directory: /usr/app
+#   fishtown-pg-executor:
+#     docker:
+#       - image: fishtownanalytics/test-container:5
+#         environment:
+#           DBT_INVOCATION_ENV: circle
+#       - image: postgres
+#         name: database
+#         environment: &pgenv
+#           POSTGRES_USER: "root"
+#           POSTGRES_PASSWORD: "password"
+#           POSTGRES_DB: "dbt"
+#     working_directory: /usr/app
 
 
-workflows:
-  version: 2
-  build-pypi-packages:
-    jobs:
-      - build
-      - test-postgres:
-          requires:
-            - build
-      # - test-redshift:
-      #     requires:
-      #       - test-postgres
-      # - test-bigquery:
-      #     requires:
-      #       - test-postgres
-      # - test-snowflake:
-      #     requires:
-      #       - test-postgres
-      - upload-artifacts:
-          requires:
-            - test-postgres
+# jobs:
+#   build:
+#     executor: fishtown-executor
+#     steps:
+#       - add_ssh_keys
+#       - checkout
+#       - run:
+#           name: Look for new build requests and build wheels
+#           command: python3.6 ./.circleci/build-from-releases.py package
+#       - run:
+#           name: where is my data?
+#           command: ls /usr/app/build
+#       - persist_to_workspace:
+#           root: /usr/app/build
+#           paths:
+#             - dbt
+#             - test_venv
+#             - pkg_venv
+#   test-postgres:
+#     executor: fishtown-pg-executor
+#     steps:
+#       - add_ssh_keys
+#       - checkout
+#       - attach_workspace:
+#           at: /usr/app/build
+#       - run: &setupdb
+#           name: Setup postgres
+#           command: bash /usr/app/build/dbt/test/setup_db.sh
+#           environment:
+#             PGHOST: database
+#             PGUSER: root
+#             PGPASSWORD: password
+#             PGDATABASE: postgres
+#       - run:
+#           name: Run tests on the built wheels
+#           command: python3.6 ./.circleci/build-from-releases.py test postgres
+#   test-redshift:
+#     executor: fishtown-executor
+#     steps:
+#       - add_ssh_keys
+#       - checkout
+#       - attach_workspace:
+#           at: /usr/app/build
+#       - run:
+#           name: Run tests on the built wheels
+#           command: python3.6 ./.circleci/build-from-releases.py test redshift
+#   test-bigquery:
+#     executor: fishtown-executor
+#     steps:
+#       - add_ssh_keys
+#       - checkout
+#       - attach_workspace:
+#           at: /usr/app/build
+#       - run:
+#           name: Run tests on the built wheels
+#           command: python3.6 ./.circleci/build-from-releases.py test bigquery
+#   test-snowflake:
+#     executor: fishtown-executor
+#     steps:
+#       - add_ssh_keys
+#       - checkout
+#       - attach_workspace:
+#           at: /usr/app/build
+#       - run:
+#           name: Run tests on the built wheels
+#           command: python3.6 ./.circleci/build-from-releases.py test snowflake
+#   upload-artifacts:
+#     executor: fishtown-executor
+#     steps:
+#       - add_ssh_keys
+#       - checkout
+#       - attach_workspace:
+#           at: /usr/app/build
+#       - run:
+#           name: Upload the artifacts and upload to pypi
+#           command: python3.6 ./.circleci/build-from-releases.py upload
+
+
+# workflows:
+#   version: 2
+#   build-pypi-packages:
+#     jobs:
+#       - build
+#       - test-postgres:
+#           requires:
+#             - build
+#       # - test-redshift:
+#       #     requires:
+#       #       - test-postgres
+#       # - test-bigquery:
+#       #     requires:
+#       #       - test-postgres
+#       # - test-snowflake:
+#       #     requires:
+#       #       - test-postgres
+#       - upload-artifacts:
+#           requires:
+#             - test-postgres

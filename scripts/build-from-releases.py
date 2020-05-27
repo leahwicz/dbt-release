@@ -149,9 +149,11 @@ class DbtRepository:
         self.path = path
 
     def _set_if_not_set(self, key, value):
-        checked = collect_output(['git', 'config', '--global', key], check=False)
+        checked = collect_output(
+            ['git', 'config', '--global', key],
+            check=False
+        )
         if not checked.strip():
-            # adding --global becuase idk what's going on
             run_command(['git', 'config', '--global', key, value])
 
     def clone_branch(self, branch: str):
@@ -168,12 +170,12 @@ class DbtRepository:
             str(self.path)
         ]
         run_command(cmd)
-        print('Running git config operations')
+
+    def checkout_branch(self, branch: str):
+        cmd = ['git', 'checkout', branch]
+        run_command(cmd, cwd=self.path)
         self._set_if_not_set('user.email', 'circleci@fishtownanalytics.com')
         self._set_if_not_set('user.name', 'CircleCI Build Bot')
-        print('Ran git config operations')
-        print('user.email: ' + collect_output(['git', 'config', 'user.email']))
-        print('user.config: ' + collect_output(['git', 'config', 'user.name']))
 
     def _rev_parse(self, commitish: str) -> str:
         cmd = ['git', 'rev-parse', commitish]
@@ -442,7 +444,7 @@ def build_wheels(args=None):
 
     dbt_path = build_dir / 'dbt'
     repository = DbtRepository(dbt_path)
-    repository.clone_branch(release.branch)
+    repository.checkout_branch(release.branch)
     repository.ensure_matching_commits(release)
     repository.set_version(release, pkg_dir)
     pypi_builder = PypiBuilder(dbt_path, pkg_dir)
@@ -467,8 +469,9 @@ def store_artifacts(args=None):
     dbt_path = build_dir / 'dbt'
     pypi_builder = PypiBuilder(dbt_path)
 
-    artifacts_dir = Path('/tmp/artifacts')
+    artifacts_dir = Path('./artifacts')
     artifact_dist_dir = artifacts_dir / 'dist'
+    artifact_dist_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(release.path, artifacts_dir / 'release.txt')
     for path in pypi_builder.built_packages():
         shutil.copyfile(path, artifact_dist_dir / path.name)
