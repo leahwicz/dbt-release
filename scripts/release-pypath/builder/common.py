@@ -121,6 +121,10 @@ class ReleaseFile:
     branch: str
     notes: str
 
+    @property
+    def is_prerelease(self) -> bool:
+        return self.version.prerelease is not None
+
     @classmethod
     def from_path(cls, path: Path) -> 'ReleaseFile':
         with path.open() as fp:

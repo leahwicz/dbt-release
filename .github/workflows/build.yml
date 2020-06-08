@@ -443,13 +443,21 @@ jobs:
     needs: [create-commit, upload-wheels, upload-homebrew-formula, upload-docker-image]
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN = ${{ secrets.DBT_GITHUB_TOKEN }}
+      - uses: actions/setup-python@v2
         with:
-          tag_name: v${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
-          release_name: dbt ${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
-          body:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Create the github release
+        env:
+          DBT_GITHUB_API_TOKEN: ${{ secrets.DBT_GITHUB_API_TOKEN }}
+        run: /bin/bash scripts/script_shim.bash github create-release
+
   # # TODO: implement
   # build-homebrew-bottle:
   #   name: Make a homebrew bottle using the formula

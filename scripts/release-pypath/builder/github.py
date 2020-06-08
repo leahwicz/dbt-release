@@ -2,7 +2,7 @@ import json
 import os
 from urllib.request import urlopen, Request
 
-from .common import ReleaseFile, EnvironmentInfo
+from .common import ReleaseFile, EnvironmentInformation
 
 
 def make_post(release: ReleaseFile):
@@ -13,6 +13,8 @@ def make_post(release: ReleaseFile):
         'name': f'dbt {release.version}',
         'body': release.notes,
     }
+    if release.is_prerelease:
+        data['prerelease'] = True
     request = Request(
         url='https://api.github.com/repos/fishtown-analytics/dbt/releases',
         headers={
@@ -33,7 +35,7 @@ def make_post(release: ReleaseFile):
 
 
 def make_github_release(args=None):
-    env = EnvironmentInfo()
+    env = EnvironmentInformation()
     release = ReleaseFile.from_artifacts(env)
     make_post(release)
 

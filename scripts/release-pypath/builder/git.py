@@ -78,6 +78,7 @@ class DbtRepository(Repository):
             str(release.version), 'major'
         ]
         print(f'bumping version to {release.version}')
+        print(f'running cmd: {cmd}')
         stream_output(cmd, cwd=self.path)
         print(f'bumped version to {release.version}')
 
@@ -103,7 +104,6 @@ class DbtRepository(Repository):
 
     def update_changelog(self, release: ReleaseFile):
         path = self.path / 'CHANGELOG.md'
-        is_prerelease = release.version.prerelease is not None
 
         nextver = re.compile(
             r'^## dbt [0-9]+\.[0-9]+\.[0-9]+ \((Release TBD)\)'
@@ -122,7 +122,7 @@ class DbtRepository(Repository):
                 raise ValueError(
                     f'Unexpected first line of CHANGELOG.md: {firstline}'
                 )
-            if is_prerelease:
+            if release.is_prerelease:
                 # if our release is a prerelease, keep the existing line
                 newdata.write(firstline)
                 newdata.write('\n')

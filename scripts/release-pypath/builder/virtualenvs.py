@@ -136,7 +136,7 @@ class PackagingEnv(EnvBuilder):
             self.dbt_pip_install(
                 tmp, context,
                 'wheel', 'setuptools', 'virtualenv==20.0.3',
-                'bumpversion', 'twine',
+                'bumpversion==0.5.3', 'twine',
             )
 
 
