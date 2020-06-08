@@ -339,9 +339,10 @@ jobs:
           path: artifacts/dist
       - name: Upload to pypi
         env:
-          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-          TWINE_USERNAME: analyst-collective
-          TWINE_PASSWORD: ${{ secrets.PYPITEST_PASSWORD }}
+          # TWINE_USERNAME: analyst-collective
+          # TWINE_PASSWORD: ${{ secrets.PYPITEST_PASSWORD }}
+          TWINE_USERNAME: fishtown-analytics
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: twine check artifacts/dist/* && twine upload --non-interactive artifacts/dist/*
   upload-docker-image:
     name: Upload a new docker image that makes use of the built wheels
@@ -382,7 +383,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: fishtownanalytics/dbt-ci-test
+          repository: fishtownanalytics/dbt
           tags: ${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
           build_args: BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
   upload-homebrew-formula:
@@ -436,10 +437,6 @@ jobs:
           SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
           SNOWFLAKE_TEST_USER: public_integration_test_user
           SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
-          ### TODO: remove this.
-          # Tell pypi to look on testpypi if it doesn't find a package on pypi, since
-          # we only push to testpypi right now.
-          PIP_EXTRA_INDEX_URL: https://test.pypi.org/simple
         run: /bin/bash scripts/script_shim.bash homebrew upload
 
   # # TODO: implement

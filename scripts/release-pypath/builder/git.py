@@ -22,7 +22,7 @@ class Repository:
         if not checked.strip():
             stream_output(['git', 'config', '--global', key, value])
 
-    def clone(self, branch: Optional[str]):
+    def clone(self, branch: Optional[str] = None):
         """Clone the given branch into path. Initialize the dbt user so commits
         work.
         """

@@ -186,16 +186,8 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
         try:
             fp = urlopen(url)
         except Exception as exc:
-            # remove this when we're done with testpypi
-            test_url = f'https://test.pypi.org/pypi/{pkg}/{version}/json'
-            try:
-                fp = urlopen(test_url)
-            except Exception:
-                print(f'Could not get pypi info for url {url}: {exc}')
-                print(
-                    f'Also could not get pypi info for url {test_url}: {exc}'
-                )
-                raise exc
+            print(f'Could not get pypi info for url {url}: {exc}')
+            raise
         try:
             data = json.load(fp)
         finally:
@@ -479,8 +471,7 @@ def homebrew_test(args=None):
     """
     env = EnvironmentInformation()
     repository = HomebrewRepository(env.homebrew_checkout_path)
-    # TODO: when this is working, no branch!
-    repository.clone(branch='dbt-ci-test')
+    repository.clone()
 
     builder = HomebrewLocalBuilder.from_env_info(env=env)
     template = builder.get_template()
@@ -491,8 +482,7 @@ def homebrew_test(args=None):
 def homebrew_upload(args=None):
     env = EnvironmentInformation()
     repository = HomebrewRepository(env.homebrew_checkout_path)
-    # TODO: when this is working, no branch!
-    repository.clone(branch='dbt-ci-test')
+    repository.clone()
 
     builder = HomebrewPypiBuilder.from_env_info(env=env)
     template = HomebrewTemplate.from_artifacts(env=env)
