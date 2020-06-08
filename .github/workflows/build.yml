@@ -438,7 +438,18 @@ jobs:
           SNOWFLAKE_TEST_USER: public_integration_test_user
           SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
         run: /bin/bash scripts/script_shim.bash homebrew upload
-
+  create-github-release:
+    name: Create the github release
+    needs: [create-commit, upload-wheels, upload-homebrew-formula, upload-docker-image]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN = ${{ secrets.DBT_GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
+          release_name: dbt ${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
+          body:
   # # TODO: implement
   # build-homebrew-bottle:
   #   name: Make a homebrew bottle using the formula
