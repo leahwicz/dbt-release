@@ -21,7 +21,7 @@ def make_post(release: ReleaseFile):
             'Content-Type': 'application/json',
             'Authorization': f'token {GITHUB_API_TOKEN}',
         },
-        data=json.dumps(data),
+        data=json.dumps(data).encode('utf-8'),
     )
     print(f'Creating release with data:\n{data}')
     try:
