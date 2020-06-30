@@ -20,10 +20,8 @@ COPY $DIST_PATH ./dist
 RUN pip install --upgrade pip setuptools
 RUN pip install --requirement ./requirements.txt
 RUN pip install --requirement ./wheel_requirements.txt
-RUN useradd -mU dbt_user
 ENV PYTHONIOENCODING=utf-8
 ENV LANG C.UTF-8
 WORKDIR /usr/app
 VOLUME /usr/app
-USER dbt_user
 ENTRYPOINT ["dbt"]
