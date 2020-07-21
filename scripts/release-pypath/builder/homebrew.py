@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import List, Iterator, Tuple
+from urllib.error import HTTPError
 from urllib.request import urlopen
 import abc
 import hashlib
@@ -203,6 +204,26 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
                 sha256 = pkginfo['digests']['sha256']
                 return url, sha256
         raise ValueError(f'Never got a valid sdist for {pkg}=={version}')
+
+    def wait_for_pypi_info(self, pkg: str, version: str) -> Tuple[str, str]:
+        # get info from pypi, retrying a few times on 404s and sleeping.
+        # Once you upload a package to pypi, it will likely 404 for a
+        # non-deterministic amount of time
+        attempts = 5
+        sleeptime = 30
+        while attempts:
+            attempts -= 1
+            try:
+                return self.get_pypi_info(pkg=pkg, version=version)
+            except HTTPError as exc:
+                if exc.code == 404 and attempts:
+                    print(
+                        f'retrying failed query, {attempts} attempts remaining'
+                    )
+                    time.sleep(sleeptime)
+                    continue
+                else:
+                    raise
 
     def get_pip_versions(
         self, env_path: Path
@@ -428,7 +449,7 @@ class HomebrewPypiBuilder(BaseHomebrewBuilder):
         )
 
     def _replaced_dep(self, dep: HomebrewDependency) -> HomebrewDependency:
-        url, sha256 = self.get_pypi_info(dep.name, dep.version)
+        url, sha256 = self.wait_for_pypi_info(dep.name, dep.version)
         if sha256 != dep.sha256:
             # this should maybe be an error!
             print(
