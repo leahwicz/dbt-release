@@ -184,6 +184,9 @@ def create_build_commit(args=None):
     repository = DbtRepository(env.dbt_dir)
     repository.clone(branch=release.branch)
 
+    # git checkout the release name
+    repository.checkout_branch(release.release_branch_name, new=True)
+
     requirements_path = env.get_dbt_requirements_file(str(release.version))
 
     make_requirements_txt(
@@ -195,11 +198,11 @@ def create_build_commit(args=None):
     )
     replace(release, commit=new_commit).store_artifacts(env)
     if args is None or args.push_updates:
-        repository.push_updates()
+        repository.push_updates(origin_name=release.release_branch_name)
 
     set_output('DBT_RELEASE_VERSION', str(release.version))
     set_output('DBT_RELEASE_COMMIT', release.commit)
-    set_output('DBT_RELEASE_BRANCH', release.branch)
+    set_output('DBT_RELEASE_BRANCH', release.release_branch_name)
 
 
 def set_env(name: str, value: str):
@@ -215,6 +218,23 @@ def build_wheels(args=None):
     pypi_builder.store_artifacts(env)
 
 
+def merge_pr(args=None):
+    print('Merging the temporary branch into the release branch')
+    env = EnvironmentInformation()
+
+    release = ReleaseFile.from_artifacts(env)
+    repository = DbtRepository(env.dbt_dir)
+    repository.clone(branch=release.branch)
+    repository.merge(release.release_branch_name)
+    repository.push_updates()
+
+    # set the branch, and also set the others so other steps can just rely on
+    # this
+    set_output('DBT_RELEASE_VERSION', str(release.version))
+    set_output('DBT_RELEASE_COMMIT', release.commit)
+    set_output('DBT_RELEASE_BRANCH', release.branch)
+
+
 def test_wheels(args=None):
     if args is None:
         target = 'postgres'
@@ -224,8 +244,6 @@ def test_wheels(args=None):
     env = EnvironmentInformation()
 
     release = ReleaseFile.from_artifacts(env)
-    repository = DbtRepository(env.dbt_dir)
-    repository.checkout_branch(release.branch)
 
     tester = WheelManager.from_env_info(env)
     requirements = env.get_dbt_requirements_file(str(release.version))
@@ -281,6 +299,12 @@ def add_native_parsers(subparsers):
         choices=['rpc', 'postgres', 'redshift', 'bigquery', 'snowflake'],
     )
     test_sub.set_defaults(func=test_wheels)
+
+    merge_sub = native_subs.add_parser(
+        'merge',
+        help='Merge the temporary release branch'
+    )
+    merge_sub.set_defaults(func=merge_pr)
 
     upload_sub = native_subs.add_parser(
         'upload',

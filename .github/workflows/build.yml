@@ -308,9 +308,35 @@ jobs:
     steps:
       - name: All tests passed
         run: echo "All tests passed"
+  merge-release-branch:
+    name: Merge the temporary release branch into the final release branch
+    needs: [create-commit, all-tests]
+    runs-on: ubuntu-18.04
+    outputs:
+      DBT_RELEASE_VERSION: ${{ steps.createrelease.outputs.DBT_RELEASE_VERSION }}
+      DBT_RELEASE_COMMIT: ${{ steps.createrelease.outputs.DBT_RELEASE_COMMIT }}
+      DBT_RELEASE_BRANCH: ${{ steps.createrelease.outputs.DBT_RELEASE_BRANCH }}
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - uses: webfactory/ssh-agent@v0.3.0
+        with:
+          ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
+      - name: Merge dbt branch
+        run: /bin/bash scripts/script_shim.bash native merge
   upload-wheels:
     name: Upload the wheels to pypi
-    needs: [create-commit, all-tests]
+    needs: [merge-release-branch, build-wheels]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/setup-python@v2
@@ -346,7 +372,7 @@ jobs:
         run: twine check artifacts/dist/* && twine upload --non-interactive artifacts/dist/*
   upload-docker-image:
     name: Upload a new docker image that makes use of the built wheels
-    needs: [create-commit, build-wheels, all-tests]
+    needs: [build-wheels, merge-release-branch]
     runs-on: ubuntu-18.04
     steps:
       - run: mkdir build && mkdir artifacts
@@ -388,7 +414,7 @@ jobs:
           build_args: BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
   upload-homebrew-formula:
     name: Make a new formula that makes use of pypi artifacts and upload that
-    needs: [create-commit, upload-wheels, all-tests]
+    needs: [merge-release-branch, upload-wheels]
     runs-on: macos-10.15
     steps:
       - uses: actions/setup-python@v2
@@ -440,7 +466,7 @@ jobs:
         run: /bin/bash scripts/script_shim.bash homebrew upload
   create-github-release:
     name: Create the github release
-    needs: [create-commit, upload-wheels, upload-homebrew-formula, upload-docker-image]
+    needs: [merge-release-branch, upload-wheels, upload-homebrew-formula, upload-docker-image]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/setup-python@v2

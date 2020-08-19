@@ -205,6 +205,10 @@ class ReleaseFile:
     def from_artifacts(cls, env: EnvironmentInformation) -> 'ReleaseFile':
         return cls.from_path(env.release_file)
 
+    @property
+    def release_branch_name(self) -> str:
+        return f'releases/{self.version!s}'
+
 
 class PackageType(Enum):
     Wheel = 1

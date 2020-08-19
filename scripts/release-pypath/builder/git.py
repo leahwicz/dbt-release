@@ -37,8 +37,11 @@ class Repository:
         self._set_if_not_set('user.email', 'buildbot@fishtownanalytics.com')
         self._set_if_not_set('user.name', 'Github Build Bot')
 
-    def checkout_branch(self, branch: str):
-        cmd = ['git', 'checkout', branch]
+    def checkout_branch(self, branch: str, *, new: bool = False):
+        cmd = ['git', 'checkout']
+        if new:
+            cmd.append('-b')
+        cmd.append(branch)
         stream_output(cmd, cwd=self.path)
         self._set_if_not_set('user.email', 'buildbot@fishtownanalytics.com')
         self._set_if_not_set('user.name', 'Github Build Bot')
@@ -47,8 +50,15 @@ class Repository:
         cmd = ['git', 'rev-parse', commitish]
         return collect_output(cmd, cwd=self.path).strip()
 
-    def push_updates(self):
+    def push_updates(self, *, origin_name: Optional[str] = None):
         cmd = ['git', 'push']
+        if origin_name:
+            cmd.extend(['origin', origin_name])
+        stream_output(cmd, cwd=self.path)
+
+    def merge(self, merge_from: str):
+        # if something has merged during our build, we should fail.
+        cmd = ['git', 'merge', '--no-ff', 'origin/' + merge_from]
         stream_output(cmd, cwd=self.path)
 
 
