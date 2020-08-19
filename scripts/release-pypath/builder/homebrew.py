@@ -127,7 +127,7 @@ class HomebrewTemplate:
 
             {dependencies}
               def install
-                virtualenv_install_with_resources :using => "python3"
+                virtualenv_install_with_resources using: "python3"
                 bin.install_symlink "#{{libexec}}/bin/dbt" => "dbt"
               end
 
