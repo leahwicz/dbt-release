@@ -171,6 +171,7 @@ def make_requirements_txt(
 
 
 def set_output(name: str, value: str):
+    print(f'setting {name}={value}')
     print(f'::set-output name={name}::{value}')
 
 
