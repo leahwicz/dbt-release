@@ -333,6 +333,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
       - name: Merge dbt branch
+        id: createrelease
         run: /bin/bash scripts/script_shim.bash native merge
   upload-wheels:
     name: Upload the wheels to pypi
@@ -382,7 +383,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: fishtown-analytics/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          ref: ${{ needs.merge-release-branch.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Download wheel_requirements
         uses: actions/download-artifact@v2
@@ -395,11 +396,11 @@ jobs:
           name: packages
           path: artifacts/dist
       - name: Echo the build args
-        run: echo BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
+        run: echo BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
       - name: ls the requirements file directory
         run: ls -l ./build/dbt/docker/requirements/
       - name: ls the build requirements txt path
-        run: ls -l ./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt
+        run: ls -l ./build/dbt/docker/requirements/requirements.${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}.txt
       - name: ls the dist path
         run: ls -l ./artifacts/dist
       - name: ls the wheel_requirements file
@@ -410,7 +411,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: fishtownanalytics/dbt
-          tags: ${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}
+          tags: ${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}
           build_args: BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.create-commit.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
   upload-homebrew-formula:
     name: Make a new formula that makes use of pypi artifacts and upload that
@@ -433,7 +434,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: fishtown-analytics/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          ref: ${{ needs.merge-release-branch.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Download homebrew template
         uses: actions/download-artifact@v2
