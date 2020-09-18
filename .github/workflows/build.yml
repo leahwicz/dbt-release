@@ -201,7 +201,7 @@ jobs:
           REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
           REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
           REDSHIFT_TEST_PORT: 5439
-          REDSHIFT_TEST_USER: circleci
+          REDSHIFT_TEST_USER: github_release
   test-snowflake:
     name: Run snowflake tests
     needs: [create-commit, build-wheels]
@@ -242,7 +242,7 @@ jobs:
           SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
           SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
           SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
-          SNOWFLAKE_TEST_USER: CIRCLECI
+          SNOWFLAKE_TEST_USER: GITHUB_RELEASE
           SNOWFLAKE_TEST_WAREHOUSE: DBT_TESTING
   test-homebrew-formula:
     name: Test the homebrew formula with local wheels
@@ -283,7 +283,7 @@ jobs:
           REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
           REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
           REDSHIFT_TEST_PORT: 5439
-          REDSHIFT_TEST_USER: circleci
+          REDSHIFT_TEST_USER: github_release
           SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
           SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
           SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TESTING_ALT
@@ -293,7 +293,7 @@ jobs:
           SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
           SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
           SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
-          SNOWFLAKE_TEST_USER: CIRCLECI
+          SNOWFLAKE_TEST_USER: GITHUB_RELEASE
           SNOWFLAKE_TEST_WAREHOUSE: DBT_TESTING
         run: /bin/bash scripts/script_shim.bash homebrew test
       - name: Store homebrew template artifact
