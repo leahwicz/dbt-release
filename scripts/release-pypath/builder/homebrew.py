@@ -133,7 +133,7 @@ class HomebrewTemplate:
 
               test do
                 (testpath/"dbt_project.yml").write(
-                  "{{name: 'test', version: '0.0.1', profile: 'default'}}",
+                  "{{name: 'test', version: '0.0.1', config-version: 2, profile: 'default'}}",
                 )
                 (testpath/".dbt/profiles.yml").write(
                   "{{default: {{outputs: {{default: {{type: 'postgres',

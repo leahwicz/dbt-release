@@ -1,4 +1,4 @@
-commit: eb077fcc
+commit: c67d0a0e
 branch: dev/kiyoshi-kuromiya
 version: 0.19.0b1
 
