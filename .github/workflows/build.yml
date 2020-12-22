@@ -20,12 +20,12 @@ jobs:
     steps:
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
-      - uses: webfactory/ssh-agent@v0.3.0
+      - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
       - name: Look for new build requests and build wheels
@@ -49,7 +49,7 @@ jobs:
           [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -89,7 +89,7 @@ jobs:
           [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -141,7 +141,7 @@ jobs:
           [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -183,7 +183,7 @@ jobs:
           [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -222,7 +222,7 @@ jobs:
           [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -267,7 +267,7 @@ jobs:
           [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -288,7 +288,7 @@ jobs:
           repository: fishtown-analytics/dbt
           ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
-      - uses: webfactory/ssh-agent@v0.3.0
+      - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
       - name: Test homebrew packaging
@@ -319,7 +319,14 @@ jobs:
           path: ./artifacts/homebrew_template.pickle
   all-tests:
     name: All tests requirement
-    needs: [test-bigquery, test-postgres, test-redshift, test-snowflake, test-homebrew-formula]
+    needs:
+      [
+        test-bigquery,
+        test-postgres,
+        test-redshift,
+        test-snowflake,
+        test-homebrew-formula,
+      ]
     runs-on: ubuntu-18.04
     steps:
       - name: All tests passed
@@ -334,7 +341,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -344,7 +351,7 @@ jobs:
         with:
           name: releasefile
           path: artifacts/
-      - uses: webfactory/ssh-agent@v0.3.0
+      - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
       - name: Merge dbt branch
@@ -363,7 +370,7 @@ jobs:
           [[ -n "${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: pip install wheel twine
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
@@ -453,7 +460,7 @@ jobs:
           [[ -n "${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}" ]]
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
         with:
@@ -474,7 +481,7 @@ jobs:
         with:
           name: homebrew-template
           path: artifacts/
-      - uses: webfactory/ssh-agent@v0.3.0
+      - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
       - name: Create and push source-only homebrew package
@@ -500,12 +507,18 @@ jobs:
         run: /bin/bash scripts/script_shim.bash homebrew upload
   create-github-release:
     name: Create the github release
-    needs: [merge-release-branch, upload-wheels, upload-homebrew-formula, upload-docker-image]
+    needs:
+      [
+        merge-release-branch,
+        upload-wheels,
+        upload-homebrew-formula,
+        upload-docker-image,
+      ]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: "3.8"
       - run: mkdir build && mkdir artifacts
       - uses: actions/checkout@v2
       - name: Download releasefile
