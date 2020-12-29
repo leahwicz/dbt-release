@@ -133,11 +133,11 @@ class HomebrewTemplate:
                   # workaround for install snowflake-connector-python 
                   # package w/o build-system deps (e.g. pyarrow)
                   if r.name == "snowflake-connector-python"
-                    r.stage {
-                    venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
+                    r.stage {{
+                      venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
                         "-v", "--no-deps", "--no-binary", ":all:",
                         "--ignore-installed", "--no-use-pep517", Pathname.pwd
-                    }
+                    }}
                   else
                     venv.pip_install r
                   end
@@ -145,7 +145,7 @@ class HomebrewTemplate:
                 
                 venv.pip_install_and_link buildpath
 
-                bin.install_symlink "#{libexec}/bin/dbt" => "dbt"
+                bin.install_symlink "#{{libexec}}/bin/dbt" => "dbt"
               end
 
               test do
@@ -437,7 +437,7 @@ class HomebrewPypiBuilder(BaseHomebrewBuilder):
     def from_env_info(
         cls,
         env: EnvironmentInformation,
-    ) -> 'HomebrewLocalBuilder':
+    ) -> 'HomebrewPypiBuilder':
         release = ReleaseFile.from_artifacts(env)
         # TODO: support making a version the default version
         return cls(
