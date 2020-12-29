@@ -127,8 +127,25 @@ class HomebrewTemplate:
 
             {dependencies}
               def install
-                virtualenv_install_with_resources using: "python3"
-                bin.install_symlink "#{{libexec}}/bin/dbt" => "dbt"
+                venv = virtualenv_create(libexec, "python3")
+
+                resources.each do |r|
+                  # workaround for install snowflake-connector-python 
+                  # package w/o build-system deps (e.g. pyarrow)
+                  if r.name == "snowflake-connector-python"
+                    r.stage {
+                    venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
+                        "-v", "--no-deps", "--no-binary", ":all:",
+                        "--ignore-installed", "--no-use-pep517", Pathname.pwd
+                    }
+                  else
+                    venv.pip_install r
+                  end
+                end
+                
+                venv.pip_install_and_link buildpath
+
+                bin.install_symlink "#{libexec}/bin/dbt" => "dbt"
               end
 
               test do
