@@ -134,10 +134,7 @@ class DBTPackageEnv(EnvBuilder):
 
 class DevelopmentWheelEnv(DBTPackageEnv):
     def __init__(
-        self,
-        package_dir: Path,
-        requirements: Optional[Path],
-        dev_requirements: Path,
+        self, package_dir: Path, requirements: Optional[Path], dev_requirements: Path
     ) -> None:
         super().__init__(package_dir=package_dir, requirements=requirements)
         self.dev_requirements = dev_requirements.absolute()

@@ -101,10 +101,7 @@ class WheelManager:
         return DBTPackageEnv(package_dir=self.wheel_dir).packages
 
     def install(
-        self,
-        env_path: Path,
-        requirements: Path,
-        dev_requirements: Optional[Path],
+        self, env_path: Path, requirements: Path, dev_requirements: Optional[Path]
     ):
         virtualenv: EnvBuilder
         if dev_requirements is not None:
@@ -115,8 +112,7 @@ class WheelManager:
             )
         else:
             virtualenv = DBTPackageEnv(
-                package_dir=self.wheel_dir,
-                requirements=requirements,
+                package_dir=self.wheel_dir, requirements=requirements
             )
         virtualenv.create(env_path)
 
@@ -245,9 +241,7 @@ def test_wheels(args=None):
     requirements = env.get_dbt_requirements_file(str(release.version))
     dev_requirements = env.dbt_dir / "dev_requirements.txt"
     tester.install(
-        env.test_venv,
-        requirements=requirements,
-        dev_requirements=dev_requirements,
+        env.test_venv, requirements=requirements, dev_requirements=dev_requirements
     )
     tester.test(env.test_venv, target)
 
@@ -270,11 +264,7 @@ def add_native_parsers(subparsers):
             "that commit in artifacts"
         ),
     )
-    create_sub.add_argument(
-        "--no-push",
-        dest="push_updates",
-        action="store_false",
-    )
+    create_sub.add_argument("--no-push", dest="push_updates", action="store_false")
     create_sub.set_defaults(func=create_build_commit)
 
     pkg_sub = native_subs.add_parser("package", help="build the wheels/tarfiles")
@@ -282,8 +272,7 @@ def add_native_parsers(subparsers):
 
     test_sub = native_subs.add_parser("test", help="Run the given tests")
     test_sub.add_argument(
-        "test_name",
-        choices=["rpc", "postgres", "redshift", "bigquery", "snowflake"],
+        "test_name", choices=["rpc", "postgres", "redshift", "bigquery", "snowflake"]
     )
     test_sub.set_defaults(func=test_wheels)
 
