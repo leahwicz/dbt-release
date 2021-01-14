@@ -276,11 +276,7 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
         stream_output(["brew", "install", path])
         stream_output(["brew", "test", path])
         if audit:
-            print(
-                'Bypassing "brew audit" due to bugs, re-enable it when '
-                "https://github.com/Homebrew/brew/pull/8589 is released"
-            )
-            # stream_output(['brew', 'audit', '--strict', path])
+            stream_output(["brew", "audit", "--strict", path])
 
     def _get_env_python_path(self) -> Path:
         magic = "python path: "

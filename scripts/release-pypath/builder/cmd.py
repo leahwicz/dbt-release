@@ -29,9 +29,3 @@ def collect_output(cmd, cwd=None, stderr=subprocess.PIPE, check=True) -> str:
             print(exc.stderr.decode("utf-8"), file=sys.stderr)
         raise
     return result.stdout.decode("utf-8")
-
-
-# def run_command(cmd, cwd=None) -> None:
-#     """Run a command, and print the stdout/stderr after it finishes."""
-#     result = collect_output(cmd, stderr=subprocess.STDOUT, cwd=cwd)
-#     print(result)
