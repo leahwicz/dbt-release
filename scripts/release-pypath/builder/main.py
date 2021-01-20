@@ -9,7 +9,7 @@ from .github import add_github_parsers
 
 
 if sys.version_info < (3, 8):
-    raise ValueError('Python 3.8 or greater required!')
+    raise ValueError("Python 3.8 or greater required!")
 
 
 def parse_args():
@@ -26,7 +26,7 @@ def parse_args():
 
 def main():
     parsed = parse_args()
-    if not hasattr(parsed, 'func'):
-        print('No arguments passed!')
+    if not hasattr(parsed, "func"):
+        print("No arguments passed!")
         sys.exit(2)
     parsed.func(parsed)

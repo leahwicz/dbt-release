@@ -3,7 +3,14 @@ name: build dbt
 # in the `dbt` repository and use repository_dispatch to trigger it with the
 # release information as arguments. Then we could have that build a release,
 # etc.
-on: push
+
+# only run when push to master contains file in /releases dir
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "releases/**"
 
 jobs:
   create-commit:
@@ -394,8 +401,6 @@ jobs:
           path: artifacts/dist
       - name: Upload to pypi
         env:
-          # TWINE_USERNAME: analyst-collective
-          # TWINE_PASSWORD: ${{ secrets.PYPITEST_PASSWORD }}
           TWINE_USERNAME: fishtown-analytics
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: twine check artifacts/dist/* && twine upload --non-interactive artifacts/dist/*
