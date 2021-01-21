@@ -4,12 +4,15 @@ from pathlib import Path
 from typing import List, Optional
 import re
 import sys
+import json
+from urllib.request import urlopen
 
 from .cmd import stream_output, collect_output
 
 
 DBT_REPO = "git@github.com:fishtown-analytics/dbt.git"
 HOMEBREW_DBT_REPO = "git@github.com:fishtown-analytics/homebrew-dbt.git"
+PYPI_DBT_VERSION_URL = "https://pypi.org/pypi/dbt/json"
 
 # This should match the pattern in .bumpversion.cfg
 VERSION_PATTERN_STR = (
@@ -27,7 +30,7 @@ class Version:
         self.raw = raw
         match = VERSION_PATTERN.match(self.raw)
         if match is None:
-            raise ValueError(f"Invalid verssion: {self.raw}")
+            raise ValueError(f"Invalid version: {self.raw}")
         groups = match.groupdict()
 
         self.major: int = int(groups["major"])
@@ -49,11 +52,81 @@ class Version:
             name = f"{name}{self.prerelease.title()}{self.num}"
         return name
 
-    def homebrew_filename(self):
+    def homebrew_filename(self) -> str:
         version_str = f"{self.major}.{self.minor}.{self.patch}"
         if self.prerelease is not None and self.num is not None:
             version_str = f"{version_str}-{self.prerelease}{self.num}"
         return f"dbt@{version_str}.rb"
+
+    @classmethod
+    def get_latest_dbt_version(cls) -> "Optional[Version]":
+        try:
+            fp = urlopen(PYPI_DBT_VERSION_URL)
+        except Exception as exc:
+            print(f"Could not get pypi info for dbt: {exc}")
+            raise
+        try:
+            data = json.load(fp)
+        finally:
+            fp.close()
+
+        version_string = data["info"]["version"]
+
+        return cls(version_string)
+
+    def __eq__(self, other):
+        return (self.major, self.minor, self.patch, self.prerelease, self.num) == (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+            other.num,
+        )
+
+    def __ne__(self, other):
+        return (self.major, self.minor, self.patch, self.prerelease, self.num) != (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+            other.num,
+        )
+
+    def __lt__(self, other):
+        return (self.major, self.minor, self.patch, self.prerelease, self.num) < (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+            other.num,
+        )
+
+    def __le__(self, other):
+        return (self.major, self.minor, self.patch, self.prerelease, self.num) <= (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+            other.num,
+        )
+
+    def __gt__(self, other):
+        return (self.major, self.minor, self.patch, self.prerelease, self.num) > (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+            other.num,
+        )
+
+    def __ge__(self, other):
+        return (self.major, self.minor, self.patch, self.prerelease, self.num) >= (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+            other.num,
+        )
 
 
 class EnvironmentInformation:
@@ -124,6 +197,21 @@ class ReleaseFile:
     @property
     def is_prerelease(self) -> bool:
         return self.version.prerelease is not None
+
+    @property
+    def is_default_version(self) -> bool:
+        """
+        The release should be the new default if:
+        - it is not a prerelease
+        - the version is greater than or equal to the
+          latest version available on PyPi
+        """
+        if self.is_prerelease:
+            return False
+        latest_dbt_version = Version.get_latest_dbt_version()
+        if self.version < latest_dbt_version:
+            return False
+        return True
 
     @classmethod
     def from_path(cls, path: Path) -> "ReleaseFile":
