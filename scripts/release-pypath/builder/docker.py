@@ -6,9 +6,19 @@ from .common import EnvironmentInformation, ReleaseFile
 def build_docker(args=None):
     env = EnvironmentInformation()
     release = ReleaseFile.from_artifacts(env)
+
     requirements_path = env.get_dbt_requirements_file(str(release.version))
+    wheel_requirements_path = env.wheel_file
+    dist_dir_path = env.dist_dir
+    dockerfile_path = env.dockerfile_path
     if requirements_path == requirements_path.absolute():
         requirements_path = requirements_path.relative_to(Path.cwd())
+    if wheel_requirements_path == wheel_requirements_path.absolute():
+        wheel_requirements_path = wheel_requirements_path.relative_to(Path.cwd())
+    if dist_dir_path == dist_dir_path.absolute():
+        dist_dir_path = dist_dir_path.relative_to(Path.cwd())
+    if dockerfile_path == dockerfile_path.absolute():
+        dockerfile_path = dockerfile_path.relative_to(Path.cwd())
 
     remote_tag = f"fishtownanalytics/dbt:{release.version}"
 
@@ -19,11 +29,13 @@ def build_docker(args=None):
         "--build-arg",
         f"BASE_REQUIREMENTS_SRC_PATH={requirements_path}",
         "--build-arg",
-        "DIST_PATH=./artifacts/dist/",
+        f"DIST_PATH={dist_dir_path}",
         "--build-arg",
-        "WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt",
+        f"WHEEL_REQUIREMENTS_SRC_PATH={wheel_requirements_path}",
         "--tag",
         remote_tag,
+        "--file",
+        dockerfile_path,
         ".",
     ]
 
