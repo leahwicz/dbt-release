@@ -406,13 +406,12 @@ class HomebrewPypiBuilder(BaseHomebrewBuilder):
     @classmethod
     def from_env_info(cls, env: EnvironmentInformation) -> "HomebrewPypiBuilder":
         release = ReleaseFile.from_artifacts(env)
-        # TODO: support making a version the default version
         return cls(
             version=release.version,
             env_path=env.homebrew_release_venv,
             homebrew_path=env.homebrew_checkout_path,
             dbt_path=env.dbt_dir,
-            set_default=False,
+            set_default=release.is_default_version,
         )
 
     def commit_versioned_formula(self):
