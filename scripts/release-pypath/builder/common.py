@@ -66,6 +66,18 @@ class EnvironmentInformation:
         return self.build_dir / "dbt"
 
     @property
+    def docker_dir(self):
+        return self.dbt_dir / "docker"
+
+    @property
+    def dockerfile_path(self):
+        return self.docker_dir / "Dockerfile"
+
+    @property
+    def integration_test_dir(self) -> Path:
+        return self.dbt_dir / "test/integration"
+
+    @property
     def dist_dir(self) -> Path:
         return self.artifacts_dir / "dist"
 
@@ -80,10 +92,6 @@ class EnvironmentInformation:
     @property
     def wheel_file(self) -> Path:
         return self.artifacts_dir / "wheel_requirements.txt"
-
-    @property
-    def integration_test_dir(self) -> Path:
-        return self.dbt_dir / "test/integration"
 
     @property
     def linux_requirements_venv(self):
@@ -110,7 +118,7 @@ class EnvironmentInformation:
         return self.build_dir / "homebrew-dbt"
 
     def get_dbt_requirements_file(self, version: str) -> Path:
-        return self.dbt_dir / f"docker/requirements/requirements.{version}.txt"
+        return self.docker_dir / f"requirements/requirements.{version}.txt"
 
 
 @dataclass
