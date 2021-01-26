@@ -4,7 +4,7 @@ name: test dbt releases
 on:
   push:
     paths-ignore:
-      - "releases/**"
+      - releases/**
 
 jobs:
   pre-commit:

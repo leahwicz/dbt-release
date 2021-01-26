@@ -35,6 +35,8 @@ jobs:
       - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
+      - run: git config --global user.email "buildbot@fishtownanalytics.com"
+      - run: git config --global user.name "Github Build Bot"
       - name: Look for new build requests and build wheels
         id: createrelease
         run: /bin/bash scripts/script_shim.bash native create
@@ -298,6 +300,8 @@ jobs:
       - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
+      - run: git config --global user.email "buildbot@fishtownanalytics.com"
+      - run: git config --global user.name "Github Build Bot"
       - name: Test homebrew packaging
         env:
           BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
@@ -361,6 +365,8 @@ jobs:
       - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
+      - run: git config --global user.email "buildbot@fishtownanalytics.com"
+      - run: git config --global user.name "Github Build Bot"
       - name: Merge dbt branch
         id: createmerge
         run: /bin/bash scripts/script_shim.bash native merge
@@ -489,6 +495,8 @@ jobs:
       - uses: webfactory/ssh-agent@v0.4.1
         with:
           ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
+      - run: git config --global user.email "buildbot@fishtownanalytics.com"
+      - run: git config --global user.name "Github Build Bot"
       - name: Create and push source-only homebrew package
         env:
           BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
