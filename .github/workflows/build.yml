@@ -450,9 +450,12 @@ jobs:
         run: ls -l ./artifacts/dist
       - name: ls the wheel_requirements file
         run: ls -l ./artifacts/wheel_requirements.txt
+      - name: ls the Dockerfile
+        run: ls -l ./build/dbt/docker/Dockerfile
       - name: Upload docker image
         uses: docker/build-push-action@v1
         with:
+          dockerfile: ./build/dbt/docker/Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: fishtownanalytics/dbt
