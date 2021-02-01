@@ -250,7 +250,7 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
         path = os.path.normpath(formula_path)
         stream_output(["brew", "uninstall", "--force", path])
         versions = []
-        for line in collect_output(["brew", "list"]).split("\n"):
+        for line in collect_output(["brew", "list", "--formula"]).split("\n"):
             line = line.strip()
             if line.startswith("dbt@") or line == "dbt":
                 versions.append(line)
