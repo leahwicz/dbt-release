@@ -161,3 +161,9 @@ class HomebrewRepository(Repository):
     def __init__(self, path: Path):
         url = "git@github.com:fishtown-analytics/homebrew-dbt.git"
         super().__init__(path=path, repository_url=url)
+
+
+class ArtifactSchemaRepository(Repository):
+    def __init__(self, path: Path):
+        url = "git@github.com:fishtown-analytics/schemas.getdbt.com.git"
+        super().__init__(path=path, repository_url=url)

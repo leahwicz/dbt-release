@@ -190,6 +190,14 @@ class EnvironmentInformation:
     def homebrew_checkout_path(self) -> Path:
         return self.build_dir / "homebrew-dbt"
 
+    @property
+    def schemas_checkout_path(self) -> Path:
+        return self.build_dir / "schemas.getdbt.com"
+
+    @property
+    def schemas_venv(self) -> Path:
+        return self.build_dir / "schemas_venv"
+
     def get_dbt_requirements_file(self, version: str) -> Path:
         return self.docker_dir / f"requirements/requirements.{version}.txt"
 
