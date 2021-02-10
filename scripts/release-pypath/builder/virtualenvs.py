@@ -170,6 +170,7 @@ class ArtifactDiffEnv(EnvBuilder):
                 tmp,
                 context,
                 "deepdiff[cli]",
+                "json-schema-for-humans"
             )
 
 
