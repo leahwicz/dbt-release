@@ -7,7 +7,7 @@ from pathlib import Path
 from .common import EnvironmentInformation, ReleaseFile
 from .git import ArtifactSchemaRepository
 from .cmd import stream_output, collect_output
-from .virtualenvs import ArtifactDiffEnv
+from .virtualenvs import SchemaArtifactEnv
 from urllib.request import urlopen
 from typing import List
 
@@ -120,7 +120,7 @@ footer {{
 
 def check_artifact_schema(args=None):
     env = EnvironmentInformation()
-    artifact_env = ArtifactDiffEnv(env.dbt_dir / "requirements.txt")
+    artifact_env = SchemaArtifactEnv(env.dbt_dir / "requirements.txt")
     artifact_env.create(env.schemas_venv)
     pip = str(env.schemas_venv / "bin/pip")
     cmd = [pip, "install", "-r", "requirements.txt"]
@@ -182,7 +182,7 @@ def check_artifact_schema(args=None):
 def publish_artifact_schema(args=None):
     env = EnvironmentInformation()
     release = ReleaseFile.from_artifacts(env)
-    artifact_env = ArtifactDiffEnv(env.dbt_dir / "requirements.txt")
+    artifact_env = SchemaArtifactEnv(env.dbt_dir / "requirements.txt")
     artifact_env.create(env.schemas_venv)
     pip = str(env.schemas_venv / "bin/pip")
     cmd = [pip, "install", "-r", "requirements.txt"]

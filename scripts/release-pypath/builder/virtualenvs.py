@@ -160,14 +160,19 @@ class PackagingEnv(EnvBuilder):
             )
 
 
-class ArtifactDiffEnv(EnvBuilder):
+class SchemaArtifactEnv(EnvBuilder):
     def __init__(self, requirements: Path):
         super().__init__(with_pip=True, upgrade_deps=True)
 
     def post_setup(self, context):
         with tempfile.TemporaryDirectory() as tmp:
             self.dbt_pip_install(
-                tmp, context, "deepdiff[cli]", "json-schema-for-humans"
+                tmp,
+                context,
+                "wheel",
+                "setuptools",
+                "deepdiff[cli]",
+                "json-schema-for-humans",
             )
 
 

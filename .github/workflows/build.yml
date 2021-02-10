@@ -328,6 +328,29 @@ jobs:
         with:
           name: homebrew-template
           path: ./artifacts/homebrew_template.pickle
+  test-artifact-schema:
+    name: Check for breaking schema changes to dbt artifacts
+    needs: [create-commit, build-wheels]
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Make sure the release branch build arg is non-empty
+        run: |
+          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Run check
+        run: /bin/bash scripts/script_shim.bash native schemas check
   all-tests:
     name: All tests requirement
     needs:
@@ -337,6 +360,7 @@ jobs:
         test-redshift,
         test-snowflake,
         test-homebrew-formula,
+        test-artifact-schema,
       ]
     runs-on: ubuntu-18.04
     steps:
@@ -521,6 +545,34 @@ jobs:
           SNOWFLAKE_TEST_USER: public_integration_test_user
           SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
         run: /bin/bash scripts/script_shim.bash homebrew upload
+  publish-artifact-schema:
+    name: Upload schemas for dbt artifacts
+    needs: [merge-release-branch, upload-wheels]
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Make sure the release branch build arg is non-empty
+        run: |
+          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Download releasefile
+        uses: actions/download-artifact@v2
+        with:
+          name: releasefile
+          path: artifacts/
+      - name: Check out dbt
+        uses: actions/checkout@v2
+        with:
+          repository: fishtown-analytics/dbt
+          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+          path: ./build/dbt
+      - name: Publish schemas to schemas.getdbt.com
+        run: /bin/bash scripts/script_shim.bash native schemas publish
   create-github-release:
     name: Create the github release
     needs:
@@ -529,6 +581,7 @@ jobs:
         upload-wheels,
         upload-homebrew-formula,
         upload-docker-image,
+        publish-artifact-schema,
       ]
     runs-on: ubuntu-18.04
     steps:
