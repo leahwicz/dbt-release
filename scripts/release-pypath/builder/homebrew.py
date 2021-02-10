@@ -510,5 +510,7 @@ def add_homebrew_parsers(subparsers):
     homebrew_upload_sub = homebrew_subs.add_parser(
         "upload", help="Upload the homebrew package"
     )
-    homebrew_upload_sub.add_argument("--no-push", dest="push_updates", action="store_false")
+    homebrew_upload_sub.add_argument(
+        "--no-push", dest="push_updates", action="store_false"
+    )
     homebrew_upload_sub.set_defaults(func=homebrew_upload)

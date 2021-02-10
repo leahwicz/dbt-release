@@ -167,10 +167,7 @@ class ArtifactDiffEnv(EnvBuilder):
     def post_setup(self, context):
         with tempfile.TemporaryDirectory() as tmp:
             self.dbt_pip_install(
-                tmp,
-                context,
-                "deepdiff[cli]",
-                "json-schema-for-humans"
+                tmp, context, "deepdiff[cli]", "json-schema-for-humans"
             )
 
 
