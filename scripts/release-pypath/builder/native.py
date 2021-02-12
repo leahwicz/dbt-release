@@ -155,9 +155,8 @@ def make_requirements_txt(env_dir: Path, dbt_dir: Path, requirements_path: Path)
             if not line:
                 continue
             parts = line.split("==")
-            # temporary fix for installing dbt-mashumaro
-            # if len(parts) != 2:
-            #     raise ValueError(f"Invalid requirements line: {line}")
+            if len(parts) != 2:
+                raise ValueError(f"Invalid requirements line: {line}")
             if parts[0] == "dbt" or parts[0].startswith("dbt-"):
                 continue
             fp.write(line + "\n")
