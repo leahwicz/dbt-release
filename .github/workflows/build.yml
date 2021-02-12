@@ -330,13 +330,12 @@ jobs:
           path: ./artifacts/homebrew_template.pickle
   all-tests:
     name: All tests requirement
-    needs:
-      [
+    needs: [
         test-bigquery,
         test-postgres,
         test-redshift,
         test-snowflake,
-        test-homebrew-formula,
+        # test-homebrew-formula,
       ]
     runs-on: ubuntu-18.04
     steps:
@@ -523,12 +522,11 @@ jobs:
         run: /bin/bash scripts/script_shim.bash homebrew upload
   create-github-release:
     name: Create the github release
-    needs:
-      [
+    needs: [
         merge-release-branch,
         upload-wheels,
-        upload-homebrew-formula,
-        upload-docker-image,
+        # upload-homebrew-formula,
+        # upload-docker-image,
       ]
     runs-on: ubuntu-18.04
     steps:
