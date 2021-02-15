@@ -266,77 +266,76 @@ jobs:
           SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
           SNOWFLAKE_TEST_USER: GITHUB_RELEASE
           SNOWFLAKE_TEST_WAREHOUSE: DBT_TESTING
-  test-homebrew-formula:
-    name: Test the homebrew formula with local wheels
-    needs: [create-commit, build-wheels]
-    runs-on: macos-10.15
-    steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
-      - uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
-      - run: mkdir build && mkdir artifacts
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      - name: Download releasefile
-        uses: actions/download-artifact@v2
-        with:
-          name: releasefile
-          path: artifacts/
-      - name: Download packages
-        uses: actions/download-artifact@v2
-        with:
-          name: packages
-          path: artifacts/dist
-      - name: Check out dbt
-        uses: actions/checkout@v2
-        with:
-          repository: fishtown-analytics/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
-          path: ./build/dbt
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
-      - run: git config --global user.email "buildbot@fishtownanalytics.com"
-      - run: git config --global user.name "Github Build Bot"
-      - name: Test homebrew packaging
-        env:
-          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
-          BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
-          REDSHIFT_TEST_DBNAME: ci
-          REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
-          REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
-          REDSHIFT_TEST_PORT: 5439
-          REDSHIFT_TEST_USER: github_release
-          SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
-          SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
-          SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TESTING_ALT
-          SNOWFLAKE_TEST_DATABASE: DBT_TEST
-          SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
-          SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
-          SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
-          SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
-          SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
-          SNOWFLAKE_TEST_USER: GITHUB_RELEASE
-          SNOWFLAKE_TEST_WAREHOUSE: DBT_TESTING
-        run: /bin/bash scripts/script_shim.bash homebrew test
-      - name: Store homebrew template artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: homebrew-template
-          path: ./artifacts/homebrew_template.pickle
+  # test-homebrew-formula:
+  #   name: Test the homebrew formula with local wheels
+  #   needs: [create-commit, build-wheels]
+  #   runs-on: macos-10.15
+  #   steps:
+  #     - name: Make sure the release branch build arg is non-empty
+  #       run: |
+  #         [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: "3.8"
+  #     - run: mkdir build && mkdir artifacts
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 2
+  #     - name: Download releasefile
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: releasefile
+  #         path: artifacts/
+  #     - name: Download packages
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: packages
+  #         path: artifacts/dist
+  #     - name: Check out dbt
+  #       uses: actions/checkout@v2
+  #       with:
+  #         repository: fishtown-analytics/dbt
+  #         ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+  #         path: ./build/dbt
+  #     - uses: webfactory/ssh-agent@v0.4.1
+  #       with:
+  #         ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
+  #     - run: git config --global user.email "buildbot@fishtownanalytics.com"
+  #     - run: git config --global user.name "Github Build Bot"
+  #     - name: Test homebrew packaging
+  #       env:
+  #         BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+  #         BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
+  #         REDSHIFT_TEST_DBNAME: ci
+  #         REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
+  #         REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
+  #         REDSHIFT_TEST_PORT: 5439
+  #         REDSHIFT_TEST_USER: github_release
+  #         SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
+  #         SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
+  #         SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TESTING_ALT
+  #         SNOWFLAKE_TEST_DATABASE: DBT_TEST
+  #         SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
+  #         SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
+  #         SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
+  #         SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
+  #         SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
+  #         SNOWFLAKE_TEST_USER: GITHUB_RELEASE
+  #         SNOWFLAKE_TEST_WAREHOUSE: DBT_TESTING
+  #       run: /bin/bash scripts/script_shim.bash homebrew test
+  #     - name: Store homebrew template artifact
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: homebrew-template
+  #         path: ./artifacts/homebrew_template.pickle
   all-tests:
     name: All tests requirement
-    needs:
-      [
+    needs: [
         test-bigquery,
         test-postgres,
         test-redshift,
         test-snowflake,
-        test-homebrew-formula,
+        # test-homebrew-formula,
       ]
     runs-on: ubuntu-18.04
     steps:
@@ -461,73 +460,72 @@ jobs:
           repository: fishtownanalytics/dbt
           tags: ${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}
           build_args: BASE_REQUIREMENTS_SRC_PATH=./build/dbt/docker/requirements/requirements.${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}.txt,DIST_PATH=./artifacts/dist,WHEEL_REQUIREMENTS_SRC_PATH=./artifacts/wheel_requirements.txt
-  upload-homebrew-formula:
-    name: Make a new formula that makes use of pypi artifacts and upload that
-    needs: [merge-release-branch, upload-wheels]
-    runs-on: macos-10.15
-    steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.merge-release-branch.outputs.DBT_RELEASE_BRANCH }}" ]]
-      - name: Make sure the release version build arg is non-empty
-        run: |
-          [[ -n "${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}" ]]
-      - uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
-      - run: mkdir build && mkdir artifacts
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      - name: Download releasefile
-        uses: actions/download-artifact@v2
-        with:
-          name: releasefile
-          path: artifacts/
-      - name: Check out dbt
-        uses: actions/checkout@v2
-        with:
-          repository: fishtown-analytics/dbt
-          ref: ${{ needs.merge-release-branch.outputs.DBT_RELEASE_BRANCH }}
-          path: ./build/dbt
-      - name: Download homebrew template
-        uses: actions/download-artifact@v2
-        with:
-          name: homebrew-template
-          path: artifacts/
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
-      - run: git config --global user.email "buildbot@fishtownanalytics.com"
-      - run: git config --global user.name "Github Build Bot"
-      - name: Create and push source-only homebrew package
-        env:
-          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
-          BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
-          REDSHIFT_TEST_DBNAME: public_integration_tests
-          REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
-          REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
-          REDSHIFT_TEST_PORT: 5439
-          REDSHIFT_TEST_USER: public_integration_test_user
-          SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
-          SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
-          SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TEST_ALT
-          SNOWFLAKE_TEST_DATABASE: DBT_TEST
-          SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
-          SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
-          SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
-          SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
-          SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
-          SNOWFLAKE_TEST_USER: public_integration_test_user
-          SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
-        run: /bin/bash scripts/script_shim.bash homebrew upload
+  # upload-homebrew-formula:
+  #   name: Make a new formula that makes use of pypi artifacts and upload that
+  #   needs: [merge-release-branch, upload-wheels]
+  #   runs-on: macos-10.15
+  #   steps:
+  #     - name: Make sure the release branch build arg is non-empty
+  #       run: |
+  #         [[ -n "${{ needs.merge-release-branch.outputs.DBT_RELEASE_BRANCH }}" ]]
+  #     - name: Make sure the release version build arg is non-empty
+  #       run: |
+  #         [[ -n "${{ needs.merge-release-branch.outputs.DBT_RELEASE_VERSION }}" ]]
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: "3.8"
+  #     - run: mkdir build && mkdir artifacts
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 2
+  #     - name: Download releasefile
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: releasefile
+  #         path: artifacts/
+  #     - name: Check out dbt
+  #       uses: actions/checkout@v2
+  #       with:
+  #         repository: fishtown-analytics/dbt
+  #         ref: ${{ needs.merge-release-branch.outputs.DBT_RELEASE_BRANCH }}
+  #         path: ./build/dbt
+  #     - name: Download homebrew template
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: homebrew-template
+  #         path: artifacts/
+  #     - uses: webfactory/ssh-agent@v0.4.1
+  #       with:
+  #         ssh-private-key: ${{ secrets.HOMEBREW_DBT_DEPLOY_SSH_KEY }}
+  #     - run: git config --global user.email "buildbot@fishtownanalytics.com"
+  #     - run: git config --global user.name "Github Build Bot"
+  #     - name: Create and push source-only homebrew package
+  #       env:
+  #         BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+  #         BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
+  #         REDSHIFT_TEST_DBNAME: public_integration_tests
+  #         REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
+  #         REDSHIFT_TEST_PASS: ${{ secrets.REDSHIFT_TEST_PASS }}
+  #         REDSHIFT_TEST_PORT: 5439
+  #         REDSHIFT_TEST_USER: public_integration_test_user
+  #         SNOWFLAKE_TEST_ACCOUNT: ${{ secrets.SNOWFLAKE_TEST_ACCOUNT }}
+  #         SNOWFLAKE_TEST_ALT_DATABASE: DBT_TEST_ALT
+  #         SNOWFLAKE_TEST_ALT_WAREHOUSE: DBT_TEST_ALT
+  #         SNOWFLAKE_TEST_DATABASE: DBT_TEST
+  #         SNOWFLAKE_TEST_OAUTH_CLIENT_ID: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_ID }}
+  #         SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET: ${{ secrets.SNOWFLAKE_TEST_OAUTH_CLIENT_SECRET }}
+  #         SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN: ${{ secrets.SNOWFLAKE_TEST_OAUTH_REFRESH_TOKEN }}
+  #         SNOWFLAKE_TEST_PASSWORD: ${{ secrets.SNOWFLAKE_TEST_PASSWORD }}
+  #         SNOWFLAKE_TEST_QUOTED_DATABASE: 1234-QUOTED-DATABASE
+  #         SNOWFLAKE_TEST_USER: public_integration_test_user
+  #         SNOWFLAKE_TEST_WAREHOUSE: DBT_TEST
+  #       run: /bin/bash scripts/script_shim.bash homebrew upload
   create-github-release:
     name: Create the github release
-    needs:
-      [
+    needs: [
         merge-release-branch,
         upload-wheels,
-        upload-homebrew-formula,
+        # upload-homebrew-formula,
         upload-docker-image,
       ]
     runs-on: ubuntu-18.04
