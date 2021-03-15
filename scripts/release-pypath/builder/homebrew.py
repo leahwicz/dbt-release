@@ -134,7 +134,7 @@ class HomebrewTemplate:
               def install
                 venv = virtualenv_create(libexec, "python3")
                 venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
-                "--upgrade", "pip"
+                  "--upgrade", "pip"
 
                 resources.each do |r|
                   if r.name == "snowflake-connector-python"
@@ -142,17 +142,17 @@ class HomebrewTemplate:
                     # package w/o build-system deps (e.g. pyarrow)
                     # adds the `--no-use-pep517` parameter
                     r.stage do
-                    venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
+                      venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
                         "-v", "--no-deps", "--no-binary", ":all:", "--ignore-installed", "--no-use-pep517", Pathname.pwd
                     end
                   elsif r.name == "grpcio" && MacOS.version >= :big_sur
                     # workaround for installing `grpcio`, a dependency of `google-cloud-bigquery`, on Big Sur
                     # https://github.com/grpc/grpc/pull/24998
                     r.stage do
-                    inreplace Pathname.pwd/"setup.py",
+                      inreplace Pathname.pwd/"setup.py",
                         "if mac_target and (pkg_resources.parse_version(mac_target) <",
                         "if mac_target and (pkg_resources.parse_version(str(mac_target)) <"
-                    venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
+                      venv.instance_variable_get(:@formula).system venv.instance_variable_get(:@venv_root)/"bin/pip", "install",
                         "-v", "--no-deps", "--no-binary", ":all:",
                         "--ignore-installed", Pathname.pwd
                     end
@@ -163,7 +163,7 @@ class HomebrewTemplate:
 
                 venv.pip_install_and_link buildpath
 
-                bin.install_symlink "#{libexec}/bin/dbt" => "dbt"
+                bin.install_symlink "#{{libexec}}/bin/dbt" => "dbt"
               end
 
               test do
