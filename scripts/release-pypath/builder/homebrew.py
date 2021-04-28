@@ -268,7 +268,7 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
     @staticmethod
     def uninstall_reinstall_basics(formula_path: Path, audit: bool = True):
         path = os.path.normpath(formula_path)
-        stream_output(["brew", "uninstall", "--force", path])
+        stream_output(["brew", "uninstall", "--force", "--formula", path])
         versions = []
         for line in collect_output(["brew", "list", "--formula"]).split("\n"):
             line = line.strip()
@@ -279,7 +279,7 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
         stream_output(["brew", "install", path])
         stream_output(["brew", "test", path])
         if audit:
-            stream_output(["brew", "audit", "--strict", path])
+            stream_output(["brew", "audit", "--strict", "--formula", path])
 
     def _get_env_python_path(self) -> Path:
         magic = "python path: "
