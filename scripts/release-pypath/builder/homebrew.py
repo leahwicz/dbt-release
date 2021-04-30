@@ -283,7 +283,8 @@ class BaseHomebrewBuilder(metaclass=abc.ABCMeta):
 
     def _get_env_python_path(self) -> Path:
         magic = "python path: "
-        output = collect_output(["dbt", "debug"])
+        # this is expected to return non-zero (no profile or project yml)
+        output = collect_output(["dbt", "debug"], check=False)
         for line in output.split("\n"):
             if line.startswith(magic):
                 return Path(line[len(magic) :])
@@ -360,7 +361,7 @@ class HomebrewLocalBuilder(BaseHomebrewBuilder):
     def run_tests(self, formula_path: Path, audit: bool = True):
         self.uninstall_reinstall_basics(formula_path=formula_path, audit=audit)
         python_bin = self._get_env_python_path()
-        dev_requirements = self.dbt_path / "dev_requirements.txt"
+        dev_requirements = self.dbt_path / "dev-requirements.txt"
         stream_output([python_bin, "-m", "pip", "install", "-r", dev_requirements])
         env_path = python_bin.parent.parent
         runner = PytestRunner(env_path, self.dbt_path)
