@@ -350,7 +350,7 @@ jobs:
           ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Run check
-        run: /bin/bash scripts/script_shim.bash native schemas check
+        run: /bin/bash scripts/script_shim.bash schemas check
   all-tests:
     name: All tests requirement
     needs:
@@ -572,7 +572,7 @@ jobs:
           ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Publish schemas to schemas.getdbt.com
-        run: /bin/bash scripts/script_shim.bash native schemas publish
+        run: /bin/bash scripts/script_shim.bash schemas publish
   create-github-release:
     name: Create the github release
     needs:
