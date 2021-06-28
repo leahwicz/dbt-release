@@ -361,7 +361,7 @@ class HomebrewLocalBuilder(BaseHomebrewBuilder):
     def run_tests(self, formula_path: Path, audit: bool = True):
         self.uninstall_reinstall_basics(formula_path=formula_path, audit=audit)
         python_bin = self._get_env_python_path()
-        dev_requirements = self.dbt_path / "dev-requirements.txt"
+        dev_requirements = self.dbt_path / "dev_requirements.txt"
         stream_output([python_bin, "-m", "pip", "install", "-r", dev_requirements])
         env_path = python_bin.parent.parent
         runner = PytestRunner(env_path, self.dbt_path)
