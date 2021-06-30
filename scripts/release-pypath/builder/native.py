@@ -239,7 +239,7 @@ def test_wheels(args=None):
 
     tester = WheelManager.from_env_info(env)
     requirements = env.get_dbt_requirements_file(str(release.version))
-    dev_requirements = env.dbt_dir / "dev_requirements.txt"
+    dev_requirements = env.dbt_dir / "dev-requirements.txt"
     tester.install(
         env.test_venv, requirements=requirements, dev_requirements=dev_requirements
     )
