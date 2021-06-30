@@ -72,8 +72,9 @@ class HomebrewTemplate:
             if pkg.name == "dbt":
                 dbt_package = pkg
             # we can assume that anything starting with dbt- in a fresh
-            # venv is a dbt package, I hope
-            elif pkg.name.startswith("dbt-"):
+            # venv is a dbt package, except dbt-extractor.
+            # when adapter plugins get split up, this janky check will go away.
+            elif pkg.name.startswith("dbt-") and pkg.name != "dbt-extractor":
                 dbt_dependencies.append(pkg)
             else:
                 ext_dependencies.append(pkg)
