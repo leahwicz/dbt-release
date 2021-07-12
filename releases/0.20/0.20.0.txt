@@ -1,0 +1,16 @@
+commit: 842df63f637c53873d2089964e4fdf33a13cce7a
+branch: 0.20.latest
+version: 0.20.0
+
+### Fixes
+
+- Avoid slowdown in column-level `persist_docs` on Snowflake, while preserving the error-avoidance from [#3149](https://github.com/fishtown-analytics/dbt/issues/3149) ([#3541](https://github.com/fishtown-analytics/dbt/issues/3541), [#3543](https://github.com/fishtown-analytics/dbt/pull/3543))
+- Partial parsing: handle already deleted nodes when schema block also deleted ([#3516](http://github.com/fishown-analystics/dbt/issues/3516), [#3522](http://github.com/fishown-analystics/dbt/issues/3522))
+
+### Docs
+
+- Update dbt logo and links ([docs#197](https://github.com/fishtown-analytics/dbt-docs/issues/197))
+
+### Under the hood
+
+- Add tracking for experimental parser accuracy ([3503](https://github.com/dbt-labs/dbt/pull/3503), [3553](https://github.com/dbt-labs/dbt/pull/3553))
