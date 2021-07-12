@@ -2,8 +2,6 @@ commit: 842df63f637c53873d2089964e4fdf33a13cce7a
 branch: 0.20.latest
 version: 0.20.0
 
-## dbt 0.20.0 (Release TBD)
-
 - 💬 [Discussion: v0.20.0](https://discourse.getdbt.com/t/2621)
 - 📖 [New and changed documentation](https://docs.getdbt.com/docs/guides/migration-guide/upgrading-to-0-20-0)
 
