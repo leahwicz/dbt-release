@@ -14,3 +14,4 @@ A second release candidate for v0.20.2.
 
 Contributors:
 - [@sungchun12](https://github.com/sungchun12) ([#3703](https://github.com/dbt-labs/dbt/pull/3703))
+
