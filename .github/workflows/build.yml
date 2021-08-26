@@ -122,7 +122,7 @@ jobs:
       - name: Run tests
         run: /bin/bash scripts/script_shim.bash native test bigquery
         env:
-          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+          BIGQUERY_TEST_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_TEST_SERVICE_ACCOUNT_JSON }}
           BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
   test-postgres:
     name: Run postgres tests
@@ -304,7 +304,7 @@ jobs:
       - run: git config --global user.name "Github Build Bot"
       - name: Test homebrew packaging
         env:
-          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+          BIGQUERY_TEST_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_TEST_SERVICE_ACCOUNT_JSON }}
           BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
           REDSHIFT_TEST_DBNAME: ci
           REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
@@ -330,7 +330,8 @@ jobs:
           path: ./artifacts/homebrew_template.pickle
   all-tests:
     name: All tests requirement
-    needs: [
+    needs:
+      [
         test-bigquery,
         test-postgres,
         test-redshift,
@@ -501,7 +502,7 @@ jobs:
       - run: git config --global user.name "Github Build Bot"
       - name: Create and push source-only homebrew package
         env:
-          BIGQUERY_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_SERVICE_ACCOUNT_JSON }}
+          BIGQUERY_TEST_SERVICE_ACCOUNT_JSON: ${{ secrets.BIGQUERY_TEST_SERVICE_ACCOUNT_JSON }}
           BIGQUERY_TEST_ALT_DATABASE: dbt-test-env-alt
           REDSHIFT_TEST_DBNAME: public_integration_tests
           REDSHIFT_TEST_HOST: ${{ secrets.REDSHIFT_TEST_HOST }}
@@ -522,7 +523,8 @@ jobs:
         run: /bin/bash scripts/script_shim.bash homebrew upload
   create-github-release:
     name: Create the github release
-    needs: [
+    needs:
+      [
         merge-release-branch,
         upload-wheels,
         upload-homebrew-formula,
@@ -545,7 +547,7 @@ jobs:
           DBT_GITHUB_API_TOKEN: ${{ secrets.DBT_GITHUB_API_TOKEN }}
         run: /bin/bash scripts/script_shim.bash github create-release
 
-  # # TODO: implement
+  # #TODO: implement
   # build-homebrew-bottle:
   #   name: Make a homebrew bottle using the formula
   #   needs: [upload-homebrew-formula]
