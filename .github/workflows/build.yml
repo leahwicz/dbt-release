@@ -14,6 +14,38 @@ on:
   workflow_dispatch:
 
 jobs:
+  create-commit:
+    # after this step:
+    #  - there should be 1 new commit in dbt.
+    #  - in that commit there should be a requirements file at docker/requirements/requirements.{version}.txt
+    #  - in that commit there should be a version bump
+    #  - in that commit there should be a changelog update
+    #  - there should be an artifact named release.txt, which is the file that triggered this + the new commit as the commit field
+    name: Create a new commit with an updated version and store the release file
+    runs-on: ubuntu-18.04
+    outputs:
+      DBT_RELEASE_BRANCH: ${{ steps.createrelease.outputs.DBT_RELEASE_BRANCH }}
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - run: mkdir build && mkdir artifacts
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
+      - run: git config --global user.email "test@test.com"
+      - run: git config --global user.name "Build Bot"
+      - name: Look for new build requests and build wheels
+        id: createrelease
+        run: /bin/bash scripts/script_shim.bash native create
+      - name: Store releasefile artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: releasefile
+          path: ./artifacts/release.txt
   build-wheels:
     # after this step there should be:
     #   - a "dist" artifact with wheels/sdists.
