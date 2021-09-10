@@ -14,88 +14,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  create-commit:
-    # after this step:
-    #  - there should be 1 new commit in dbt.
-    #  - in that commit there should be a requirements file at docker/requirements/requirements.{version}.txt
-    #  - in that commit there should be a version bump
-    #  - in that commit there should be a changelog update
-    #  - there should be an artifact named release.txt, which is the file that triggered this + the new commit as the commit field
-    name: Create a new commit with an updated version and store the release file
-    runs-on: ubuntu-18.04
-    outputs:
-      DBT_RELEASE_BRANCH: ${{ steps.createrelease.outputs.DBT_RELEASE_BRANCH }}
-    steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
-      - run: mkdir build && mkdir artifacts
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.DBT_DEPLOY_SSH_KEY }}
-      - run: git config --global user.email "test@test.com"
-      - run: git config --global user.name "Build Bot"
-      - name: Look for new build requests and build wheels
-        id: createrelease
-        run: /bin/bash scripts/script_shim.bash native create
-      - name: Store releasefile artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: releasefile
-          path: ./artifacts/release.txt
-  build-wheels:
-    # after this step there should be:
-    #   - a "dist" artifact with wheels/sdists.
-    #   - a "wheel_requirements" text file with the wheel paths
-    name: Build the wheels based on the releases file
-    needs: create-commit
-    runs-on: ubuntu-18.04
-    steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
-      - uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
-      - run: mkdir build && mkdir artifacts
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      - name: Download releasefile
-        uses: actions/download-artifact@v2
-        with:
-          name: releasefile
-          path: artifacts/
-      - name: Check out dbt
-        uses: actions/checkout@v2
-        with:
-          repository: dbt-labs/dbt
-          # see https://github.com/actions/checkout/issues/265 - can't use the short sha
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
-          path: ./build/dbt
-      - name: Look for new build requests and build wheels
-        run: /bin/bash scripts/script_shim.bash native package
-      - name: Store package artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: packages
-          path: ./artifacts/dist
-      - name: Store wheel requirements file
-        uses: actions/upload-artifact@v2
-        with:
-          name: wheel_requirements
-          path: ./artifacts/wheel_requirements.txt
   test-artifact-schema:
     name: Check for breaking schema changes to dbt artifacts
-    needs: [create-commit, build-wheels]
     runs-on: ubuntu-18.04
     steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
@@ -107,7 +29,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: dbt-labs/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+  #        ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Run check
         run: /bin/bash scripts/script_shim.bash schemas check
@@ -120,12 +42,8 @@ jobs:
         run: echo "All tests passed"
   publish-artifact-schema:
     name: Upload schemas for dbt artifacts
-    needs: create-commit
     runs-on: ubuntu-18.04
     steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
@@ -133,16 +51,11 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - name: Download releasefile
-        uses: actions/download-artifact@v2
-        with:
-          name: releasefile
-          path: artifacts/
       - name: Check out dbt
         uses: actions/checkout@v2
         with:
           repository: dbt-labs/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+  #        ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Publish schemas to schemas.getdbt.com
         run: /bin/bash scripts/script_shim.bash schemas publish
