@@ -148,7 +148,6 @@ class PackagingEnv(EnvBuilder):
         super().__init__(with_pip=True, upgrade_deps=True)
 
     def post_setup(self, context):
-
         with tempfile.TemporaryDirectory() as tmp:
             self.dbt_pip_install(
                 tmp,
@@ -158,6 +157,22 @@ class PackagingEnv(EnvBuilder):
                 "virtualenv==20.0.3",
                 "bumpversion==0.5.3",
                 "twine",
+            )
+
+
+class SchemaArtifactEnv(EnvBuilder):
+    def __init__(self, requirements: Path):
+        super().__init__(with_pip=True, upgrade_deps=True)
+
+    def post_setup(self, context):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.dbt_pip_install(
+                tmp,
+                context,
+                "wheel",
+                "setuptools",
+                "deepdiff[cli]",
+                "json-schema-for-humans",
             )
 
 

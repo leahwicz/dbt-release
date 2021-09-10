@@ -494,8 +494,8 @@ def homebrew_upload(args=None):
     template = HomebrewTemplate.from_artifacts(env=env)
     builder.build_and_test(template=template)
 
-    # push!
-    repository.push_updates()
+    if args is None or args.push_updates:
+        repository.push_updates()
 
 
 def add_homebrew_parsers(subparsers):
@@ -509,5 +509,8 @@ def add_homebrew_parsers(subparsers):
 
     homebrew_upload_sub = homebrew_subs.add_parser(
         "upload", help="Upload the homebrew package"
+    )
+    homebrew_upload_sub.add_argument(
+        "--no-push", dest="push_updates", action="store_false"
     )
     homebrew_upload_sub.set_defaults(func=homebrew_upload)
