@@ -21,9 +21,9 @@ jobs:
     name: Build the wheels based on the releases file
     runs-on: ubuntu-18.04
     steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
+#      - name: Make sure the release branch build arg is non-empty
+#        run: |
+#          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
@@ -41,7 +41,7 @@ jobs:
         with:
           repository: dbt-labs/dbt
           # see https://github.com/actions/checkout/issues/265 - can't use the short sha
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+#          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Look for new build requests and build wheels
         run: /bin/bash scripts/script_shim.bash native package
@@ -60,9 +60,9 @@ jobs:
     needs: [build-wheels]
     runs-on: ubuntu-18.04
     steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
+ #     - name: Make sure the release branch build arg is non-empty
+#        run: |
+#          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
@@ -74,7 +74,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: dbt-labs/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+ #         ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Run check
         run: /bin/bash scripts/script_shim.bash schemas check
@@ -89,9 +89,9 @@ jobs:
     name: Upload schemas for dbt artifacts
     runs-on: ubuntu-18.04
     steps:
-      - name: Make sure the release branch build arg is non-empty
-        run: |
-          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
+#      - name: Make sure the release branch build arg is non-empty
+#        run: |
+#          [[ -n "${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}" ]]
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
@@ -108,7 +108,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: dbt-labs/dbt
-          ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
+  #        ref: ${{ needs.create-commit.outputs.DBT_RELEASE_BRANCH }}
           path: ./build/dbt
       - name: Publish schemas to schemas.getdbt.com
         run: /bin/bash scripts/script_shim.bash schemas publish
